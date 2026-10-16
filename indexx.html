@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Calculator</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #e8f0ec;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .calculator {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 300px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        h2 {
+            text-align: center;
+            color: #176b48;
+        }
+
+        #display {
+            width: 100%;
+            height: 65px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            padding: 10px;
+            font-size: 28px;
+            text-align: right;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #f4f8f5;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        button {
+            height: 55px;
+            font-size: 20px;
+            border: none;
+            border-radius: 8px;
+            background: #e9eeeb;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #d3dfd8;
+        }
+
+        .operator {
+            background: #cde8d8;
+        }
+
+        .reset {
+            background: #f7d6d3;
+        }
+
+        .equal {
+            background: #176b48;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="calculator">
+        <h2>Calculator</h2>
+
+        <input type="text" id="display"
+               value="0" readonly aria-label="Calculator display">
+
+        <div class="buttons">
+            <button class="reset" onclick="resetCalculator()">AC</button>
+            <button onclick="deleteLast()">DEL</button>
+            <button class="operator" onclick="chooseOperator('%')">%</button>
+            <button class="operator" onclick="chooseOperator('/')">÷</button>
+
+            <button onclick="inputNumber('7')">7</button>
+            <button onclick="inputNumber('8')">8</button>
+            <button onclick="inputNumber('9')">9</button>
+            <button class="operator" onclick="chooseOperator('*')">×</button>
+
+            <button onclick="inputNumber('4')">4</button>
+            <button onclick="inputNumber('5')">5</button>
+            <button onclick="inputNumber('6')">6</button>
+            <button class="operator" onclick="chooseOperator('-')">−</button>
+
+            <button onclick="inputNumber('1')">1</button>
+            <button onclick="inputNumber('2')">2</button>
+            <button onclick="inputNumber('3')">3</button>
+            <button class="operator" onclick="chooseOperator('+')">+</button>
+
+            <button onclick="changeSign()">+/−</button>
+            <button onclick="inputNumber('0')">0</button>
+            <button onclick="inputDecimal()">.</button>
+            <button class="equal" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById("display");
+
+        let firstNumber = null;
+        let operator = null;
+        let waitingForNumber = false;
+        let finished = false;
+
+        function inputNumber(number) {
+            if (finished) resetCalculator();
+
+            if (waitingForNumber) {
+                display.value = number;
+                waitingForNumber = false;
+            } else if (display.value === "0") {
+                display.value = number;
+            } else if (display.value.length < 16) {
+                display.value += number;
+            }
+        }
+
+        function inputDecimal() {
+            if (finished) resetCalculator();
+
+            if (waitingForNumber) {
+                display.value = "0.";
+                waitingForNumber = false;
+            } else if (!display.value.includes(".")) {
+                display.value += ".";
+            }
+        }
+
+        function chooseOperator(op) {
+            if (operator !== null && !waitingForNumber) {
+                calculate();
+                if (finished && display.value.startsWith("Error")) {
+                    return;
+                }
+            }
+
+            firstNumber = Number(display.value);
+            operator = op;
+            waitingForNumber = true;
+            finished = false;
+        }
+
+        function calculate() {
+            if (operator === null || firstNumber === null
+                || waitingForNumber) {
+                return;
+            }
+
+            const secondNumber = Number(display.value);
+            let result;
+
+            switch (operator) {
+                case "+":
+                    result = firstNumber + secondNumber;
+                    break;
+                case "-":
+                    result = firstNumber - secondNumber;
+                    break;
+                case "*":
+                    result = firstNumber * secondNumber;
+                    break;
+                case "/":
+                    if (secondNumber === 0) {
+                        display.value = "Error: divide by zero";
+                        clearCalculation();
+                        finished = true;
+                        return;
+                    }
+                    result = firstNumber / secondNumber;
+                    break;
+                case "%":
+                    if (secondNumber === 0) {
+                        display.value = "Error: divide by zero";
+                        clearCalculation();
+                        finished = true;
+                        return;
+                    }
+                    result = firstNumber % secondNumber;
+                    break;
+            }
+
+            if (!Number.isFinite(result)) {
+                display.value = "Error: result too large";
+            } else {
+                display.value = String(
+                    Number(result.toPrecision(12))
+                );
+            }
+
+            clearCalculation();
+            finished = true;
+        }
+
+        function clearCalculation() {
+            firstNumber = null;
+            operator = null;
+            waitingForNumber = true;
+        }
+
+        function deleteLast() {
+            if (finished || waitingForNumber) return;
+
+            display.value = display.value.length > 1
+                ? display.value.slice(0, -1)
+                : "0";
+        }
+
+        function changeSign() {
+            if (finished) finished = false;
+
+            if (Number(display.value) !== 0) {
+                display.value = String(-Number(display.value));
+            }
+        }
+
+        function resetCalculator() {
+            display.value = "0";
+            firstNumber = null;
+            operator = null;
+            waitingForNumber = false;
+            finished = false;
+        }
+    </script>
+
+</body>
+</html>
